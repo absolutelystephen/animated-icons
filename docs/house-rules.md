@@ -45,6 +45,8 @@ Use lowercase letters, numbers and hyphens only.
      data-icon="decision-1"
      data-animation="weigh-the-options"
      data-version="1"
+     data-title="Weigh the options"         <!-- shown in the app library -->
+     data-description="The person becomes the pivot of a balance."   <!-- optional, one sentence -->
      data-duration="3.25"                  <!-- seconds until the last movement ends -->
      data-hold="0.75"                      <!-- seconds to hold the final frame -->
      data-overscan="3"                     <!-- max distance motion travels outside the viewBox, in viewBox units -->
@@ -69,7 +71,9 @@ Use lowercase letters, numbers and hyphens only.
 |---|---|---|
 | `part-` | A piece of the original artwork. Only these carry path data from the source. | `part-ring-left`, `part-mark-check` |
 | `move-` | A wrapper group that exists only to be animated. | `move-pan-left`, `move-glance` |
-| `mask-` | Mask ids. Prefix with the animation name so ids never collide when two icons share a page. | `weigh-mask-check` |
+| `mask-` | Shapes inside a `<mask>` (the white shapes that do the revealing). | `mask-sweep`, `mask-write` |
+| `<animation>-mask-` | Mask ids. Start with the animation name so ids never collide. | `weigh-mask-check` |
+| `<animation>-` | Keyframe names. Start with the animation name for the same reason. | `@keyframes weigh-pan-left` |
 
 Parts never carry animations themselves. Animate the `move-` wrappers. This keeps the artwork layer clean and lets several motions stack (for example, a pan that sways while the mark inside it pops).
 
@@ -202,12 +206,16 @@ Reuse these so the whole icon family feels consistent.
 
 ### Rendering
 
-1. Load the master SVG in headless Chromium with a transparent page background.
-2. Set the root color.
-3. Add the class `play`, then immediately pause every animation.
-4. For each frame before `data-duration`, set every animation's `currentTime` to that frame's time and capture a PNG with the background left transparent.
-5. For every frame at or after `data-duration` (the hold), remove the class `play` and capture the static icon instead. Chrome draws moving pieces on separate layers and can place them up to about a quarter of a pixel off. That's invisible while things move, but the held frames should be the exact artwork.
-6. Encode the frames.
+The reference renderer is `app/lib/render-core.js`. It runs in the browser (the export app) and in headless Chrome (automated pre-renders), so both produce identical frames.
+
+1. Load the master SVG into a hidden iframe so its styles are isolated.
+2. Pause every animation. For each frame before `data-duration`, set every animation's `currentTime` to that frame's time.
+3. Read the animated values (transform, opacity, stroke-dasharray) with `getComputedStyle` and copy them as inline styles onto a clone of the SVG with `play` removed. The clone is a frozen snapshot of that moment.
+4. Set the chosen color on the clone, widen its viewBox to the full 16:9 frame (placement rule above), and draw it onto a transparent canvas. The master file itself is never changed.
+5. For every frame at or after `data-duration` (the hold), draw the static icon instead, so held frames are the exact artwork.
+6. Encode the PNG frames to ProRes 4444.
+
+This is why section 4 only allows CSS keyframes on a short list of properties: the renderer must be able to read every animated value back.
 
 ### Encoding
 
@@ -219,7 +227,7 @@ ffmpeg -framerate 24000/1001 -i frames/f%04d.png \
   output.mov
 ```
 
-Approximate size for a 4-second clip: 40 to 50 MB at 1080p, about four times that at 4K.
+Approximate size for a 4-second clip: 20 to 60 MB at 1080p and 50 to 200 MB at 4K, depending on color and motion.
 
 ### File naming
 
@@ -250,7 +258,8 @@ The app and any build script run these automatically. Anyone building an icon by
 - [ ] Joining all `part-` path data in order reproduces the source path data exactly.
 - [ ] Every artwork path uses `fill="currentColor"`; there are no hex values on paths.
 - [ ] Mask contents are white only.
-- [ ] Root has `class="icon play"`, `overflow="visible"`, `color` and every required `data-` attribute.
+- [ ] Root has `class="icon play"`, `overflow="visible"`, `color` and every required `data-` attribute (`data-icon`, `data-animation`, `data-version`, `data-title`, `data-duration`, `data-hold`, `data-overscan`, `data-default-color`).
+- [ ] Keyframe names and mask ids start with the animation name.
 - [ ] Only CSS keyframes are used. No scripts, no SMIL, no `infinite`.
 - [ ] `data-duration` equals the latest animation end time.
 - [ ] At `data-duration`, every `move-` group has an identity transform and full opacity, and every mask shape is fully revealing (identity transform, `stroke-dasharray: none`). Read these with `getComputedStyle`. This proves the motion lands exactly on the artwork.

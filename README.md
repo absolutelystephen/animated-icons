@@ -20,12 +20,16 @@ This repo holds:
 │   └── decision-1/
 │       ├── source/
 │       │   └── decision_1.svg  Original from the brand hub. Never edited.
-│       └── decision-1_weigh-the-options.svg   Animated master
-├── app/                        Export app (coming soon)
-└── exports/                    Local exports. Ignored by git.
+│       ├── decision-1_sequential-pop.svg      Animated masters, one per animation
+│       ├── decision-1_branch-out.svg
+│       ├── decision-1_drawn-on.svg
+│       └── decision-1_weigh-the-options.svg
+└── app/                        The export app (runs in the browser on GitHub Pages)
+    ├── lib/render-core.js      Shared renderer: frames and ProRes export
+    └── assets/                 Huron logo and brand fonts
 ```
 
-Each icon gets its own folder under `icons/`. One icon can have several animations; each is a separate master SVG.
+Each icon gets its own folder under `icons/`. One icon can have several animations; each is a separate master SVG. Pre-rendered `.mov` files are stored as GitHub Release assets, never in the repo.
 
 ## Exporting an icon
 
@@ -77,7 +81,7 @@ The file is almost certainly fine. QuickTime Player, Finder's Quick Look, VLC an
 | Frame rates | 23.976 (default), 24, 25, 29.97, 30 |
 | Length | Animation length plus a 0.75 s hold on the finished icon |
 | Placement | Centered. Artwork fits within 62.5% of frame width and 70% of frame height |
-| File size | Roughly 40 to 50 MB per 4 seconds at 1080p; about 4× at 4K |
+| File size | Roughly 20 to 60 MB per 4 seconds at 1080p; 50 to 200 MB at 4K |
 
 ## Brand colors
 

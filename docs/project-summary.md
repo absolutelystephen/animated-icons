@@ -143,8 +143,14 @@ After downloading the `.mov`, the background looked black instead of transparent
 
 - The Huron brand skill covers decks, documents and web pages but not motion. These house rules fill that gap for animated icons.
 
+## Step 6: Getting ready for the export app
+
+- The four animations were rebuilt as masters that follow the house rules: one color setting on the root, `part-` and `move-` naming, and the settings the app reads (`data-title`, `data-duration`, `data-hold`, `data-overscan` and more).
+- A validator checked each master: artwork identical to the source, no hard-coded colors, animation end matches `data-duration`, every animated value lands exactly on the static icon, and motion stays inside the declared overscan. It caught one mistake (`branch-out` declared too little overscan) which was fixed.
+- A browser export test proved the whole pipeline can run on GitHub Pages: frames rendered in the browser, recolored correctly, and encoded to ProRes 4444 with alpha by ffmpeg.wasm. A 1080p export took under a minute and 4K about three minutes on a slow test machine.
+
 ## What comes next
 
-1. Convert the decision icon masters to the house-rules format: `currentColor` fills, color on the root, `data-` settings, `part-` and `move-` naming. The four standalone SVGs from this round predate the rules and hard-code the color on each path.
-2. Build the small app: brand color picker plus custom hex, 1080p or 4K, frame rate (23.976 default), transparent ProRes 4444 export.
-3. Re-export concept 4 at 23.976 fps, plus a white version for dark footage.
+1. Build the export app in a new session, using the build prompt and the starter kit.
+2. Set up automatic pre-renders of the default Aubergine in 1080p and 4K at 23.976 and 29.97 fps.
+3. Add more icons by dropping new masters into `icons/`.

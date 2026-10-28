@@ -1,0 +1,104 @@
+# Build and deploy
+#
+# Runs on every push to main (and from the Actions tab with "Run workflow").
+#  1. Checks every master in icons/ against docs/house-rules.md section 7.
+#  2. Pre-renders the default color of each valid master (1080p and 4K, 23.976 and 29.97)
+#     and stores the files on the "prerenders" release. Only changed masters are rendered.
+#  3. Builds library.json, the list of icons the app shows.
+#  4. Publishes the app to GitHub Pages.
+# If a master fails the checks, it's left out of the app, the run is marked failed and the
+# run's summary page explains what to fix. The valid icons are still published.
+
+name: Build and deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write   # create and update the "prerenders" release
+  pages: write      # publish to GitHub Pages
+  id-token: write   # required by the Pages deployment
+
+# One run at a time, so two runs never edit the release together. Never cancel a run halfway.
+concurrency:
+  group: build-and-deploy
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Check, pre-render and build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    outputs:
+      invalid: ${{ steps.validate.outputs.invalid }}
+      prerender: ${{ steps.prerender.outcome }}
+      prerender_failed: ${{ steps.prerender.outputs.failed }}
+    steps:
+      - name: Get the repo
+        uses: actions/checkout@v7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install pinned tools (Playwright, ffmpeg.wasm)
+        run: npm ci
+
+      - name: Install headless Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Install ffmpeg
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends ffmpeg
+
+      - name: Check masters against the house rules
+        id: validate
+        run: node scripts/validate.mjs
+
+      - name: Pre-render default colors
+        id: prerender
+        continue-on-error: true   # a pre-render problem shouldn't stop the site publishing
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/prerender.mjs
+
+      - name: Build library.json
+        run: node scripts/build-library.mjs
+
+      - name: Assemble the site
+        run: node scripts/assemble-site.mjs
+
+      - name: Set up GitHub Pages
+        uses: actions/configure-pages@v6
+
+      - name: Upload the site
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: _site
+
+  deploy:
+    name: Publish to GitHub Pages
+    needs: build
+    runs-on: ubuntu-24.04
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Publish
+        id: deployment
+        uses: actions/deploy-pages@v5
+
+      - name: Fail the run if a master was left out
+        if: needs.build.outputs.invalid != '0'
+        run: |
+          echo "::error::${{ needs.build.outputs.invalid }} animation(s) failed the house-rules checks and were left out of the app. Open the run's Summary page to see what to fix."
+          exit 1
+
+      - name: Fail the run if pre-rendering had problems
+        if: needs.build.outputs.prerender != 'success' || (needs.build.outputs.prerender_failed != '' && needs.build.outputs.prerender_failed != '0')
+        run: |
+          echo "::error::Pre-rendering didn't finish. The app still works, but some downloads render in the browser instead of instantly. Open the run's Summary page or the 'Pre-render default colors' step for details."
+          exit 1

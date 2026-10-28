@@ -72,8 +72,8 @@ Use lowercase letters, numbers and hyphens only.
 | `part-` | A piece of the original artwork. Only these carry path data from the source. | `part-ring-left`, `part-mark-check` |
 | `move-` | A wrapper group that exists only to be animated. | `move-pan-left`, `move-glance` |
 | `mask-` | Shapes inside a `<mask>` (the white shapes that do the revealing). | `mask-sweep`, `mask-write` |
-| `<animation>-mask-` | Mask ids. Start with the animation name so ids never collide. | `weigh-mask-check` |
-| `<animation>-` | Keyframe names. Start with the animation name for the same reason. | `@keyframes weigh-pan-left` |
+| `<animation>-mask-` | Mask ids. Start with the animation name (or its first word or words, such as `weigh` for `weigh-the-options`) so ids never collide. | `weigh-mask-check` |
+| `<animation>-` | Keyframe names. Start with the animation name (or its first word or words) for the same reason. | `@keyframes weigh-pan-left` |
 
 Parts never carry animations themselves. Animate the `move-` wrappers. This keeps the artwork layer clean and lets several motions stack (for example, a pan that sways while the mark inside it pops).
 
@@ -250,7 +250,7 @@ Most preview apps cannot show transparency and fill it with black: QuickTime Pla
 
 ## 7. Checks before anything is merged
 
-The app and any build script run these automatically. Anyone building an icon by hand runs them too.
+The **Build and deploy** workflow runs these automatically on every push (`scripts/validate.mjs`) and leaves out any master that fails, with an explanation on the run's Summary page. Anyone building an icon by hand runs them too.
 
 **Master SVG**
 
@@ -259,11 +259,12 @@ The app and any build script run these automatically. Anyone building an icon by
 - [ ] Every artwork path uses `fill="currentColor"`; there are no hex values on paths.
 - [ ] Mask contents are white only.
 - [ ] Root has `class="icon play"`, `overflow="visible"`, `color` and every required `data-` attribute (`data-icon`, `data-animation`, `data-version`, `data-title`, `data-duration`, `data-hold`, `data-overscan`, `data-default-color`).
-- [ ] Keyframe names and mask ids start with the animation name.
+- [ ] The file is `icons/<icon-name>/<icon-name>_<animation-name>.svg`, and `data-icon` and `data-animation` match the folder and file name.
+- [ ] Keyframe names and mask ids start with the animation name, or with its first word or words (`weigh-` for `weigh-the-options`).
 - [ ] Only CSS keyframes are used. No scripts, no SMIL, no `infinite`.
 - [ ] `data-duration` equals the latest animation end time.
 - [ ] At `data-duration`, every `move-` group has an identity transform and full opacity, and every mask shape is fully revealing (identity transform, `stroke-dasharray: none`). Read these with `getComputedStyle`. This proves the motion lands exactly on the artwork.
-- [ ] The static icon (rendered without `play`) matches the source icon. Allow edge-smoothing differences only: no pixel more than 8 out of 255 apart.
+- [ ] The static icon (rendered without `play`) matches the source icon. Allow edge-smoothing differences only: no pixel more than 8 out of 255 apart once each pixel is averaged with its eight neighbors. (Pieces drawn as separate paths are edge-smoothed separately, so single edge pixels can differ by 10 to 40 even when the artwork is identical. Averaging removes that noise; a piece just 0.03 units out of place still scores around 70. The build compares at 1200 px wide.)
 - [ ] Motion stays within `data-overscan` at every frame.
 
 **Exported `.mov`**

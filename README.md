@@ -20,7 +20,7 @@ https://<account>.github.io/<repo>/
 
 For example, if the repo is `github.com/huron-video/animated-icons`, the app is at `https://huron-video.github.io/animated-icons/`. Use **Chrome or Edge**.
 
-1. **Animation.** Pick one from the list on the left. It plays in the preview.
+1. **Icon.** Pick one from the list on the left. Its animation plays in the preview.
 2. **Color.** Click a brand color, or type a 6-digit hex value under **Custom hex**. Colors marked with a moon work best on dark footage; choosing one switches the preview to a dark background. Use **Light**, **Dark** and **Transparent** above the preview to check it on different backgrounds, and drag the slider under the preview to step through it frame by frame.
 3. **Output.** Choose **1080p** or **4K**, and a frame rate. 23.976 and 29.97 are shown; 24, 25 and 30 are under **Other frame rates**.
 4. **Export.** Click the red button.
@@ -62,23 +62,42 @@ That's normal. The file is transparent. QuickTime Player, Finder's Quick Look, V
 
 You only need github.com. No code changes.
 
+Each icon in the app has **one** animation: the one your team chose. Each icon's folder in `icons/` therefore holds one master, plus the original artwork in `source/`. Concepts that weren't chosen go in `archive/`, which the app ignores.
+
 1. Build the master by following the [house rules](docs/house-rules.md). They're short, and the app depends on them.
 2. On the repo's page on github.com, open the `icons` folder.
-3. For a **new icon**: click **Add file > Upload files** and drag in a folder named after the icon (for example `growth-1`) containing:
+3. Click **Add file > Upload files** and drag in a folder named after the icon (for example `growth-1`) containing:
    - `source/growth_1.svg`: the original from the [Huron brand hub](https://brandhub.huronconsultinggroup.com/design-system/brand-overview), unedited
-   - `growth-1_<animation-name>.svg`: one master per animation
+   - `growth-1_<animation-name>.svg`: the chosen animation's master
 
-   For a **new animation of an existing icon**: open that icon's folder and upload just the master.
-4. Type a short note in the **Commit changes** box (for example "Add growth-1 rise animation") and click **Commit changes**.
-5. Wait a few minutes. The **Actions** tab shows the run. When it has a green tick, refresh the app and the animation is in the list.
+   The folder name and the start of the master's file name must match, and so must the master's `data-icon` setting. That's how the check knows they belong together.
+4. Type a short note in the **Commit changes** box (for example "Add growth-1 icon") and click **Commit changes**.
+5. Wait a few minutes. The **Actions** tab shows the run. When it has a green tick, refresh the app and the icon is in the list.
+
+The app shows the icon's name from its folder name in sentence case, with one- and two-letter words in capitals: `growth-1` becomes "Growth 1" and `ai-1` becomes "AI 1". To choose the name yourself, add `data-icon-title="..."` to the master's root `<svg>`.
 
 If the run shows a red cross, the master didn't pass the checks. Click the run, then **Summary**: it lists, in plain English, what to fix in which file. Valid icons are still published; only the broken master is left out until it's fixed. To fix it, open the file on github.com, click the pencil to edit, or upload a corrected copy with the same name.
 
-To **remove** an animation, open the file on github.com, click the **...** menu and choose **Delete file**, then commit. It disappears from the app on the next run, and its pre-rendered files are deleted too.
+### Moving or renaming a file on github.com
+
+GitHub has no move or rename button, but you can change a file's path while editing it:
+
+1. Open the file and click the **pencil** (Edit this file).
+2. Click at the very start of the file name box at the top and press **Backspace**. Each press pulls the folder before it into the box, for example `decision-1/decision-1_drawn-on.svg`.
+3. Edit the path, for example to `archive/decision-1/decision-1_drawn-on.svg`. Typing a `/` creates a folder.
+4. Click **Commit changes**. Folders disappear on their own once they're empty.
+
+### Changing which animation an icon uses
+
+Move the current master from `icons/<icon-name>/` into `archive/<icon-name>/`, and move (or upload) the new one into `icons/<icon-name>/`. The old pre-rendered files are deleted and the new ones made on the next run.
+
+### Removing an icon
+
+Delete its master (open the file, click the **...** menu, choose **Delete file**, commit), or move it to `archive/`. It disappears from the app on the next run, and its pre-rendered files are deleted too.
 
 ## How pre-renders work
 
-The most common exports download instantly because they're made in advance: every animation in its default color (Aubergine 700) at 1080p and 4K, at 23.976 and 29.97. That's four files per animation.
+The most common exports download instantly because they're made in advance: every icon in its default color (Aubergine 700) at 1080p and 4K, at 23.976 and 29.97. That's four files per icon.
 
 - Every time something is pushed to the `main` branch, the **Build and deploy** workflow renders them with the same renderer the app uses, in a headless Chrome browser, and encodes them with ffmpeg using exactly the same ProRes settings.
 - Only new or changed masters are rendered again, so most runs take a couple of minutes. A run that renders new icons takes longer (roughly a minute or two per animation).
@@ -177,10 +196,12 @@ Bookmark it and share it with the team.
 ├── docs/
 │   ├── house-rules.md              How every animated icon must be built
 │   └── project-summary.md          How the first icon was made, and what we learned
-└── icons/
+├── icons/                          What the app shows: one folder per icon
+│   └── decision-1/
+│       ├── source/decision_1.svg   Original from the brand hub. Never edited.
+│       └── decision-1_weigh-the-options.svg   The chosen animation (the master)
+└── archive/                        Concepts that weren't chosen. The app ignores this folder.
     └── decision-1/
-        ├── source/decision_1.svg   Original from the brand hub. Never edited.
-        └── decision-1_*.svg        Animated masters, one per animation
 ```
 
 ## Export specs

@@ -147,7 +147,7 @@ function staticChecks({ text, sources, folder, base }) {
 
   const meta = missing.length ? null : {
     icon: attr('data-icon'), animation: attr('data-animation'), version: attr('data-version'),
-    title: attr('data-title'), description: attr('data-description') || '',
+    title: attr('data-title'), description: attr('data-description') || '', iconTitle: attr('data-icon-title') || '',
     duration: num('data-duration'), hold: num('data-hold'), overscan: num('data-overscan'),
     defaultColor: (attr('data-default-color') || '').toUpperCase(), viewBox: attr('viewBox'),
   };
@@ -334,7 +334,8 @@ else if (!bad.length) md += `All ${results.length} animations passed the house-r
 else {
   md += `${good} of ${results.length} animations passed and are in the app. **${bad.length} ${bad.length === 1 ? 'was' : 'were'} left out** until fixed:\n\n`;
   for (const r of bad) {
-    md += `### ${r.file}\n\n${r.problems.map((p) => `- ${p}`).join('\n')}\n\n`;
+    // Escape < so the Summary page shows names like <path> instead of hiding them.
+    md += `### ${r.file}\n\n${r.problems.map((p) => `- ${p.replace(/</g, '&lt;')}`).join('\n')}\n\n`;
     for (const p of r.problems) console.log(`::error file=${r.file}::${p.replace(/\n/g, ' ')}`);
   }
   const repoUrl = process.env.GITHUB_REPOSITORY ? `${process.env.GITHUB_SERVER_URL || 'https://github.com'}/${process.env.GITHUB_REPOSITORY}/blob/HEAD/` : '';

@@ -1,0 +1,11 @@
+# Local build output (the workflow makes these fresh every run)
+node_modules/
+build/
+_site/
+
+# Exports and pre-renders are never committed. Pre-renders live on the "prerenders" release.
+exports/
+*.mov
+
+.DS_Store
+Thumbs.db

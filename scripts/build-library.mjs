@@ -11,13 +11,17 @@ const validation = readJson(path.join(BUILD, 'validation.json'));
 if (!validation) throw new Error('Run scripts/validate.mjs first.');
 const prerenders = readJson(path.join(BUILD, 'prerenders.json'), { items: {} });
 
-// "decision-1" -> "Decision 1"
-const titleFromId = (id) => id.replace(/-/g, ' ').replace(/^./, (c) => c.toUpperCase());
+// The icon's name in the app: data-icon-title if the master has one, otherwise
+// made from the folder name in sentence case, with 1 and 2 letter words in
+// capitals: "decision-1" -> "Decision 1", "ai-1" -> "AI 1".
+const titleFromId = (id) => id.split('-')
+  .map((w, i) => (/^[a-z]{1,2}$/.test(w) ? w.toUpperCase() : i === 0 ? w[0].toUpperCase() + w.slice(1) : w))
+  .join(' ');
 
 const icons = new Map();
 for (const m of validation.masters.filter((x) => x.ok)) {
   const { meta } = m;
-  if (!icons.has(meta.icon)) icons.set(meta.icon, { id: meta.icon, title: titleFromId(meta.icon), animations: [] });
+  if (!icons.has(meta.icon)) icons.set(meta.icon, { id: meta.icon, title: meta.iconTitle || titleFromId(meta.icon), animations: [] });
   const pre = prerenders.items[`${meta.icon}_${meta.animation}`];
   icons.get(meta.icon).animations.push({
     id: meta.animation,
@@ -39,10 +43,11 @@ const library = {
   // Used for the help link to the README. Empty when built locally.
   repo: process.env.GITHUB_REPOSITORY || '',
   icons: [...icons.values()]
-    .sort((a, b) => a.id.localeCompare(b.id, 'en', { numeric: true }))
+    .sort((a, b) => a.title.localeCompare(b.title, 'en', { numeric: true }))
     .map((i) => ({ ...i, animations: i.animations.sort((a, b) => a.title.localeCompare(b.title)) })),
 };
 
 writeJson(path.join(BUILD, 'library.json'), library);
 const count = library.icons.reduce((n, i) => n + i.animations.length, 0);
-console.log(`library.json: ${library.icons.length} icon(s), ${count} animation(s)`);
+console.log(`library.json: ${library.icons.length} icon(s), ${count} master(s)`);
+for (const i of library.icons) console.log(`  ${i.title}: ${i.animations.map((a) => a.title).join(', ')}`);

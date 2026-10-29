@@ -8,7 +8,7 @@ A static site with no framework and no build step: plain HTML, CSS and JavaScrip
 
 | File | What it does |
 |---|---|
-| `index.html` | The one page: library (1), preview, color (2), output (3), export (4). |
+| `index.html` | The one page: icon list (1), preview, color (2), output (3), export (4). The list shows one card per master in `icons/`; each icon folder holds only its chosen animation (unused concepts live in `archive/`, which the build ignores). |
 | `styles.css` | Brand fonts, color tokens and layout. Huron Brand 2026: Bricolage Grotesque and Roboto, Regular and Bold only; radius 8 / 12 / 16 px; Guava 600 only on the export button. |
 | `app.js` | Wires the page together: loads `library.json`, keeps the current choices, remembers them in `localStorage`, picks instant download or in-browser render, shows progress and errors. |
 | `lib/colors.js` | The brand palette (name, hex, footage hint) and hex helpers. **Shared with the build scripts**, so pre-render file names match the app. |

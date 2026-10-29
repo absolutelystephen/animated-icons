@@ -2,7 +2,7 @@
  * app.js
  * Wires the page together: library (1), preview, color (2), output (3) and export (4).
  *
- *   library.json        written by the build (scripts/build-library.mjs): icons, animations, pre-render links
+ *   library.json        written by the build (scripts/build-library.mjs): icons, their masters, pre-render links
  *   lib/colors.js       the brand palette and hex helpers
  *   lib/preview.js      the large preview and thumbnails
  *   lib/exporter.js     in-browser rendering with ffmpeg.wasm
@@ -198,38 +198,32 @@ function buildLibrary() {
   const list = $('library');
   list.innerHTML = '';
   if (!state.anims.length) {
-    list.innerHTML = '<p class="muted">No animations yet. Upload a master SVG to <code>icons/&lt;icon-name&gt;/</code> on GitHub and it appears here a few minutes later.</p>';
+    list.innerHTML = '<p class="muted">No icons yet. Upload a master SVG to <code>icons/&lt;icon-name&gt;/</code> on GitHub and it appears here a few minutes later.</p>';
     return;
   }
-  for (const icon of state.library.icons) {
-    const group = document.createElement('div');
-    group.className = 'icon-group';
-    group.innerHTML = `<p class="icon-group-title">${icon.title}</p><div class="icon-group-list"></div>`;
-    for (const a of icon.animations) {
-      const label = document.createElement('label');
-      label.className = 'anim';
-      label.dataset.search = `${icon.title} ${icon.id} ${a.title} ${a.id}`.toLowerCase();
-      label.innerHTML = `
-        <input type="radio" name="animation" value="${a.file}">
-        <span class="anim-thumb"><img alt="" loading="lazy"></span>
-        <span><span class="anim-name">${a.title}</span><span class="anim-len">${secs(a.duration + a.hold)} clip</span></span>`;
-      label.querySelector('input').addEventListener('change', () => selectAnimation(a));
-      group.lastElementChild.append(label);
-      // Thumbnail: the finished icon in its default color.
-      getText(a.file).then((text) => {
-        const meta = readMeta(new DOMParser().parseFromString(text, 'image/svg+xml').documentElement);
-        label.querySelector('img').src = svgUrl(displayCopy(text, { color: a.defaultColor, viewBox: overscanViewBox(meta), play: false }));
-      }).catch(() => {});
-    }
-    list.append(group);
+  // One card per icon: its thumbnail and name, with the chosen animation underneath.
+  for (const a of state.anims) {
+    const label = document.createElement('label');
+    label.className = 'anim';
+    label.dataset.search = `${a.icon.title} ${a.icon.id} ${a.title} ${a.id}`.toLowerCase();
+    label.innerHTML = `
+      <input type="radio" name="animation" value="${a.file}">
+      <span class="anim-thumb"><img alt="" loading="lazy"></span>
+      <span><span class="anim-name">${a.icon.title}</span><span class="anim-len">${a.title}, ${secs(a.duration + a.hold)}</span></span>`;
+    label.querySelector('input').addEventListener('change', () => selectAnimation(a));
+    list.append(label);
+    // Thumbnail: the finished icon in its default color.
+    getText(a.file).then((text) => {
+      const meta = readMeta(new DOMParser().parseFromString(text, 'image/svg+xml').documentElement);
+      label.querySelector('img').src = svgUrl(displayCopy(text, { color: a.defaultColor, viewBox: overscanViewBox(meta), play: false }));
+    }).catch(() => {});
   }
   // Search appears once the library is big enough to need it.
-  if (state.anims.length > 8) {
+  if (state.anims.length > 10) {
     $('search-wrap').hidden = false;
     $('search').addEventListener('input', (e) => {
       const q = e.target.value.trim().toLowerCase();
       for (const el of list.querySelectorAll('.anim')) el.hidden = q && !el.dataset.search.includes(q);
-      for (const g of list.querySelectorAll('.icon-group')) g.hidden = ![...g.querySelectorAll('.anim')].some((el) => !el.hidden);
     });
   }
 }
@@ -237,9 +231,9 @@ function buildLibrary() {
 async function selectAnimation(anim) {
   state.current = anim;
   for (const input of document.querySelectorAll('input[name="animation"]')) input.checked = input.value === anim.file;
-  $('anim-title').textContent = anim.title;
-  $('anim-desc').textContent = anim.description;
-  $('preview').alt = `${anim.title} animation preview`;
+  $('anim-title').textContent = anim.icon.title;
+  $('anim-desc').textContent = [anim.title, anim.description].filter(Boolean).join('. ');
+  $('preview').alt = `${anim.icon.title} icon, ${anim.title} animation`;
   savePrefs();
   updateExport();
   try {
@@ -472,7 +466,7 @@ async function init() {
   buildLibrary();
   const first = state.anims.find((a) => a.file === prefs.animation) || state.anims[0];
   if (first) selectAnimation(first);
-  else { $('anim-title').textContent = 'No animations yet'; updateExport(); }
+  else { $('anim-title').textContent = 'No icons yet'; updateExport(); }
 }
 
 init();

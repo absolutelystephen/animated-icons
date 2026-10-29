@@ -24,6 +24,8 @@ If an icon follows every rule below, the app only ever needs to change one value
 
 Each animation is a single, self-contained SVG file: the **master**. It holds the artwork, the motion and the settings the app needs. No external CSS, JavaScript, fonts or images.
 
+**One chosen animation per icon.** An icon's folder in `icons/` holds only the master for the animation the team chose, plus `source/`. The export app shows every master in `icons/`, so concepts that weren't chosen go in `archive/<icon-name>/` instead. The app and the build ignore `archive/`.
+
 ### File name
 
 ```
@@ -47,6 +49,7 @@ Use lowercase letters, numbers and hyphens only.
      data-version="1"
      data-title="Weigh the options"         <!-- shown in the app library -->
      data-description="The person becomes the pivot of a balance."   <!-- optional, one sentence -->
+     data-icon-title="Decision 1"           <!-- optional: the icon's name in the app; otherwise made from data-icon -->
      data-duration="3.25"                  <!-- seconds until the last movement ends -->
      data-hold="0.75"                      <!-- seconds to hold the final frame -->
      data-overscan="3"                     <!-- max distance motion travels outside the viewBox, in viewBox units -->
